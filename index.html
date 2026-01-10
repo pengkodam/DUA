@@ -132,97 +132,277 @@
         const DrawingCrossActivity = () => {
             const canvasRef = useRef(null);
             const [isDrawing, setIsDrawing] = useState(false);
+            const [color, setColor] = useState('#8B5CF6');
+            const [lineWidth, setLineWidth] = useState(3);
+            const [history, setHistory] = useState([]);
+            const [historyStep, setHistoryStep] = useState(-1);
+            const [showSteps, setShowSteps] = useState(false);
+
+            const colors = [
+                { name: 'Purple', value: '#8B5CF6', label: 'Default', emoji: '💜' },
+                { name: 'Red', value: '#EF4444', label: 'Family', emoji: '❤️' },
+                { name: 'Blue', value: '#3B82F6', label: 'Friends', emoji: '💙' },
+                { name: 'Green', value: '#10B981', label: 'Strangers', emoji: '💚' },
+                { name: 'Yellow', value: '#F59E0B', label: 'Coworkers', emoji: '💛' },
+                { name: 'Pink', value: '#EC4899', label: 'Neighbors', emoji: '🩷' },
+                { name: 'Black', value: '#1F2937', label: 'Text', emoji: '✍️' }
+            ];
+
+            const steps = [
+                '📖 Jesus said: "When I am lifted up, I will draw ALL people to myself"',
+                '✝️ The cross is already drawn - this is where all are drawn to!',
+                '✍️ Write names or draw symbols around the cross',
+                '➡️ Draw arrows from each name pointing to the cross',
+                '🎨 Use colors: Red=Family, Blue=Friends, Green=Strangers',
+                '🙏 When done, pray for each person represented'
+            ];
 
             useEffect(() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
-
-                const ctx = canvas.getContext('2d');
                 canvas.width = canvas.offsetWidth;
-                canvas.height = canvas.offsetHeight;
-
-                // Draw the cross
-                ctx.strokeStyle = '#667eea';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(canvas.width / 2, 50);
-                ctx.lineTo(canvas.width / 2, canvas.height - 50);
-                ctx.moveTo(100, canvas.height / 2);
-                ctx.lineTo(canvas.width - 100, canvas.height / 2);
-                ctx.stroke();
+                canvas.height = 600;
+                drawCross();
+                saveToHistory();
             }, []);
+
+            const drawCross = () => {
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.strokeStyle = '#764ba2';
+                ctx.lineWidth = 10;
+                ctx.lineCap = 'round';
+
+                // Vertical line
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - 100);
+                ctx.lineTo(centerX, centerY + 100);
+                ctx.stroke();
+
+                // Horizontal line
+                ctx.beginPath();
+                ctx.moveTo(centerX - 70, centerY - 30);
+                ctx.lineTo(centerX + 70, centerY - 30);
+                ctx.stroke();
+
+                // Add glow
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = '#667eea';
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Label
+                ctx.font = 'bold 14px Inter';
+                ctx.fillStyle = '#667eea';
+                ctx.textAlign = 'center';
+                ctx.fillText('CHRIST', centerX, centerY + 130);
+            };
+
+            const saveToHistory = () => {
+                const canvas = canvasRef.current;
+                const newHistory = history.slice(0, historyStep + 1);
+                newHistory.push(canvas.toDataURL());
+                setHistory(newHistory);
+                setHistoryStep(newHistory.length - 1);
+            };
+
+            const undo = () => {
+                if (historyStep > 0) {
+                    const canvas = canvasRef.current;
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.src = history[historyStep - 1];
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                    };
+                    setHistoryStep(historyStep - 1);
+                }
+            };
+
+            const redo = () => {
+                if (historyStep < history.length - 1) {
+                    const canvas = canvasRef.current;
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.src = history[historyStep + 1];
+                    img.onload = () => {
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0);
+                    };
+                    setHistoryStep(historyStep + 1);
+                }
+            };
 
             const startDrawing = (e) => {
                 setIsDrawing(true);
-                draw(e);
-            };
-
-            const stopDrawing = () => {
-                setIsDrawing(false);
-                const canvas = canvasRef.current;
-                const ctx = canvas.getContext('2d');
-                ctx.beginPath();
-            };
-
-            const draw = (e) => {
-                if (!isDrawing && e.type !== 'mousedown') return;
-
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
                 const rect = canvas.getBoundingClientRect();
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
-
-                ctx.lineWidth = 2;
-                ctx.lineCap = 'round';
-                ctx.strokeStyle = '#764ba2';
-
-                ctx.lineTo(x, y);
-                ctx.stroke();
                 ctx.beginPath();
                 ctx.moveTo(x, y);
             };
 
-            const clearCanvas = () => {
+            const draw = (e) => {
+                if (!isDrawing) return;
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Redraw the cross
-                ctx.strokeStyle = '#667eea';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(canvas.width / 2, 50);
-                ctx.lineTo(canvas.width / 2, canvas.height - 50);
-                ctx.moveTo(100, canvas.height / 2);
-                ctx.lineTo(canvas.width - 100, canvas.height / 2);
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = 'round';
+                ctx.lineTo(x, y);
                 ctx.stroke();
+            };
+
+            const stopDrawing = () => {
+                if (isDrawing) {
+                    setIsDrawing(false);
+                    saveToHistory();
+                }
+            };
+
+            const clearCanvas = () => {
+                drawCross();
+                saveToHistory();
+            };
+
+            const downloadImage = () => {
+                const canvas = canvasRef.current;
+                const link = document.createElement('a');
+                link.download = 'drawing-to-the-cross.png';
+                link.href = canvas.toDataURL();
+                link.click();
             };
 
             return (
                 <div className="bg-white rounded-2xl p-8 shadow-lg">
                     <div className="text-center mb-6">
                         <h3 className="text-2xl font-bold mb-3 gradient-text">✝️ Drawing to the Cross</h3>
-                        <p className="text-gray-600 mb-2">Draw symbols, names, or words around the cross</p>
-                        <p className="text-sm text-gray-500">Then draw lines connecting them back to the center</p>
+                        <p className="text-gray-600 mb-2">"When I am lifted up, I will draw ALL people to myself" - John 12:32</p>
+                        <button 
+                            onClick={() => setShowSteps(!showSteps)}
+                            className="text-sm text-purple-600 hover:text-purple-800 font-semibold"
+                        >
+                            {showSteps ? '▲ Hide' : '▼ Show'} Step-by-Step Guide
+                        </button>
                     </div>
 
+                    {showSteps && (
+                        <div className="mb-6 bg-purple-50 rounded-xl p-4">
+                            <ol className="space-y-2 text-sm">
+                                {steps.map((step, i) => (
+                                    <li key={i} className="text-gray-700">{step}</li>
+                                ))}
+                            </ol>
+                        </div>
+                    )}
+
+                    {/* Color Palette */}
+                    <div className="mb-4">
+                        <h4 className="text-xs font-semibold mb-2 text-gray-600">COLOR MEANINGS:</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {colors.map((c) => (
+                                <button
+                                    key={c.value}
+                                    onClick={() => setColor(c.value)}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition ${
+                                        color === c.value 
+                                            ? 'ring-2 ring-purple-600 bg-purple-50' 
+                                            : 'bg-gray-100 hover:bg-gray-200'
+                                    }`}
+                                    title={c.label}
+                                >
+                                    <div 
+                                        className="w-4 h-4 rounded-full border border-gray-300" 
+                                        style={{backgroundColor: c.value}}
+                                    ></div>
+                                    <span>{c.emoji} {c.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Brush Size */}
+                    <div className="mb-4">
+                        <label className="text-xs font-semibold text-gray-600 block mb-1">
+                            BRUSH SIZE: {lineWidth}px
+                        </label>
+                        <input 
+                            type="range" 
+                            min="1" 
+                            max="8" 
+                            value={lineWidth}
+                            onChange={(e) => setLineWidth(Number(e.target.value))}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        />
+                    </div>
+
+                    {/* Canvas */}
                     <canvas
                         ref={canvasRef}
-                        className="drawing-canvas w-full h-96 bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl border-2 border-purple-200"
+                        className="drawing-canvas w-full border-2 border-purple-200 rounded-xl bg-gradient-to-br from-purple-50 to-blue-50 mb-4"
                         onMouseDown={startDrawing}
-                        onMouseUp={stopDrawing}
                         onMouseMove={draw}
+                        onMouseUp={stopDrawing}
                         onMouseLeave={stopDrawing}
                     />
 
-                    <div className="mt-4 text-center">
+                    {/* Controls */}
+                    <div className="flex flex-wrap gap-2 justify-center">
+                        <button
+                            onClick={undo}
+                            disabled={historyStep <= 0}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold"
+                            title="Undo last action"
+                        >
+                            <i className="fas fa-undo mr-1"></i>Undo
+                        </button>
+                        <button
+                            onClick={redo}
+                            disabled={historyStep >= history.length - 1}
+                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold"
+                            title="Redo last action"
+                        >
+                            <i className="fas fa-redo mr-1"></i>Redo
+                        </button>
                         <button
                             onClick={clearCanvas}
-                            className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold"
+                            className="px-4 py-2 bg-orange-200 text-orange-700 rounded-lg hover:bg-orange-300 text-sm font-semibold"
+                            title="Clear and reset"
                         >
-                            <i className="fas fa-redo mr-2"></i>Clear & Start Over
+                            <i className="fas fa-trash mr-1"></i>Reset
                         </button>
+                        <button
+                            onClick={downloadImage}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold"
+                            title="Save as image"
+                        >
+                            <i className="fas fa-download mr-1"></i>Save Image
+                        </button>
+                    </div>
+
+                    {/* Discussion Prompts */}
+                    <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+                        <h4 className="text-sm font-bold text-blue-800 mb-3">
+                            <i className="fas fa-comments mr-2"></i>Discussion Questions:
+                        </h4>
+                        <div className="space-y-2 text-xs text-blue-900">
+                            <p>💭 What do you notice about our drawing? How many people/groups are represented?</p>
+                            <p>💭 How does this visual remind you that <strong>Christ does the drawing</strong>, not us?</p>
+                            <p>💭 How does seeing everyone's arrows strengthen your confidence in God's mission?</p>
+                            <p className="font-semibold pt-2 border-t border-blue-200">
+                                🙏 Close by praying for each person/group represented on your drawing
+                            </p>
+                        </div>
                     </div>
                 </div>
             );
