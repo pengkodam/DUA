@@ -39,7 +39,14 @@
         
         .fade-in { animation: fadeIn 0.6s ease-out; }
         .pulse { animation: pulse 2s ease-in-out infinite; }
-        .drawing-canvas { touch-action: none; cursor: crosshair; }
+        .drawing-canvas { 
+            touch-action: none; 
+            cursor: crosshair;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
         
         .word-bubble {
             display: inline-block;
@@ -238,33 +245,50 @@
                 }
             };
 
+            const getCoordinates = (e) => {
+                const canvas = canvasRef.current;
+                const rect = canvas.getBoundingClientRect();
+                
+                // Handle touch events
+                if (e.touches && e.touches.length > 0) {
+                    return {
+                        x: e.touches[0].clientX - rect.left,
+                        y: e.touches[0].clientY - rect.top
+                    };
+                }
+                // Handle mouse events
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            };
+
             const startDrawing = (e) => {
+                e.preventDefault(); // Prevent scrolling on mobile
                 setIsDrawing(true);
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const coords = getCoordinates(e);
                 ctx.beginPath();
-                ctx.moveTo(x, y);
+                ctx.moveTo(coords.x, coords.y);
             };
 
             const draw = (e) => {
                 if (!isDrawing) return;
+                e.preventDefault(); // Prevent scrolling on mobile
                 const canvas = canvasRef.current;
                 const ctx = canvas.getContext('2d');
-                const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const coords = getCoordinates(e);
                 ctx.strokeStyle = color;
                 ctx.lineWidth = lineWidth;
                 ctx.lineCap = 'round';
-                ctx.lineTo(x, y);
+                ctx.lineTo(coords.x, coords.y);
                 ctx.stroke();
             };
 
-            const stopDrawing = () => {
+            const stopDrawing = (e) => {
                 if (isDrawing) {
+                    if (e) e.preventDefault(); // Prevent scrolling on mobile
                     setIsDrawing(false);
                     saveToHistory();
                 }
@@ -354,6 +378,9 @@
                         onMouseMove={draw}
                         onMouseUp={stopDrawing}
                         onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
                     />
 
                     {/* Controls */}
