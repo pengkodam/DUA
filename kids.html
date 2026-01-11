@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Mission - Kids Edition</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+        
+        @keyframes pop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
+        
+        .bounce { animation: bounce 2s ease-in-out infinite; }
+        .wiggle { animation: wiggle 1s ease-in-out; }
+        .pop { animation: pop 0.5s ease-out; }
+        .sparkle { animation: sparkle 1s ease-in-out infinite; }
+        
+        .cloud {
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            opacity: 0.7;
+        }
+        
+        .star {
+            position: absolute;
+            font-size: 30px;
+            animation: sparkle 1.5s ease-in-out infinite;
+        }
+        
+        .big-button {
+            font-size: 1.5rem;
+            padding: 20px 40px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .big-button:hover {
+            transform: scale(1.1);
+        }
+        
+        .big-button:active {
+            transform: scale(0.95);
+        }
+        
+        .activity-card {
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .activity-card:hover {
+            transform: translateY(-10px) rotate(-2deg);
+        }
+        
+        .dragging {
+            opacity: 0.5;
+            cursor: move;
+        }
+        
+        .drawing-canvas {
+            touch-action: none;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><circle cx="10" cy="10" r="8" fill="%23ff6b6b"/></svg>') 10 10, auto;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-200 via-purple-200 to-pink-200">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const KidsApp = () => {
+            const [currentSection, setCurrentSection] = useState('home');
+            const [stars, setStars] = useState(0);
+            const [completedActivities, setCompletedActivities] = useState([]);
+
+            const completeActivity = (activityId) => {
+                if (!completedActivities.includes(activityId)) {
+                    setCompletedActivities([...completedActivities, activityId]);
+                    setStars(stars + 1);
+                }
+            };
+
+            return (
+                <div className="min-h-screen pb-20">
+                    {/* Floating Decorations */}
+                    <div className="star" style={{top: '10%', left: '5%', animationDelay: '0s'}}>⭐</div>
+                    <div className="star" style={{top: '20%', right: '10%', animationDelay: '0.5s'}}>✨</div>
+                    <div className="star" style={{top: '60%', left: '8%', animationDelay: '1s'}}>🌟</div>
+                    <div className="star" style={{top: '70%', right: '15%', animationDelay: '1.5s'}}>💫</div>
+
+                    {/* Header */}
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white py-6 px-4 shadow-lg relative overflow-hidden">
+                        <div className="max-w-4xl mx-auto flex justify-between items-center relative z-10">
+                            <div>
+                                <h1 className="text-4xl font-bold bounce">✝️ The Mission</h1>
+                                <p className="text-xl">Kids Edition!</p>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-3xl font-bold">⭐ {stars}</div>
+                                <div className="text-sm">Stars Earned!</div>
+                            </div>
+                        </div>
+                        {/* Floating clouds */}
+                        <div className="cloud" style={{width: '60px', height: '30px', top: '10px', left: '20%'}}></div>
+                        <div className="cloud" style={{width: '80px', height: '40px', top: '30px', right: '15%'}}></div>
+                    </div>
+
+                    <div className="max-w-6xl mx-auto px-4 py-8">
+                        {currentSection === 'home' && <HomePage setCurrentSection={setCurrentSection} completedActivities={completedActivities} />}
+                        {currentSection === 'story' && <StorySection setCurrentSection={setCurrentSection} completeActivity={completeActivity} />}
+                        {currentSection === 'matching' && <MatchingGame setCurrentSection={setCurrentSection} completeActivity={completeActivity} />}
+                        {currentSection === 'drawing' && <DrawingActivity setCurrentSection={setCurrentSection} completeActivity={completeActivity} />}
+                        {currentSection === 'memory' && <MemoryVerse setCurrentSection={setCurrentSection} completeActivity={completeActivity} />}
+                        {currentSection === 'prayer' && <PrayerActivity setCurrentSection={setCurrentSection} completeActivity={completeActivity} />}
+                    </div>
+                </div>
+            );
+        };
+
+        const HomePage = ({ setCurrentSection, completedActivities }) => {
+            const activities = [
+                { id: 'story', title: '📖 The Story', description: 'Learn about God\'s Love', color: 'from-blue-400 to-blue-600', emoji: '📖' },
+                { id: 'matching', title: '🎮 Matching Game', description: 'Match the Pictures!', color: 'from-green-400 to-green-600', emoji: '🎮' },
+                { id: 'drawing', title: '🎨 Draw to Jesus', description: 'Draw & Color!', color: 'from-purple-400 to-purple-600', emoji: '🎨' },
+                { id: 'memory', title: '⭐ Memory Verse', description: 'Learn Bible Words!', color: 'from-yellow-400 to-yellow-600', emoji: '⭐' },
+                { id: 'prayer', title: '🙏 Prayer Time', description: 'Talk to God!', color: 'from-pink-400 to-pink-600', emoji: '🙏' }
+            ];
+
+            return (
+                <div className="fade-in">
+                    {/* Hero */}
+                    <div className="text-center mb-12">
+                        <div className="text-8xl mb-4 bounce">✝️</div>
+                        <h2 className="text-5xl font-bold text-purple-600 mb-4">Jesus Loves You!</h2>
+                        <p className="text-2xl text-gray-700">God has an AMAZING mission for YOU!</p>
+                    </div>
+
+                    {/* Activity Grid */}
+                    <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        {activities.map((activity) => (
+                            <div
+                                key={activity.id}
+                                onClick={() => setCurrentSection(activity.id)}
+                                className={`activity-card bg-gradient-to-br ${activity.color} rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden`}
+                            >
+                                {completedActivities.includes(activity.id) && (
+                                    <div className="absolute top-4 right-4 text-5xl pop">✅</div>
+                                )}
+                                <div className="text-7xl mb-4">{activity.emoji}</div>
+                                <h3 className="text-3xl font-bold mb-2">{activity.title}</h3>
+                                <p className="text-xl opacity-90">{activity.description}</p>
+                                <div className="mt-4 text-2xl">👉 Click to Play!</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const StorySection = ({ setCurrentSection, completeActivity }) => {
+            const [step, setStep] = useState(0);
+            
+            const story = [
+                {
+                    emoji: '❤️',
+                    title: 'God LOVES You!',
+                    text: 'God loves the WHOLE WORLD so much!',
+                    color: 'bg-red-100',
+                    textColor: 'text-red-600'
+                },
+                {
+                    emoji: '✝️',
+                    title: 'Jesus Came for YOU!',
+                    text: 'God sent Jesus to save everyone because He loves us!',
+                    color: 'bg-purple-100',
+                    textColor: 'text-purple-600'
+                },
+                {
+                    emoji: '🎁',
+                    title: 'It\'s a GIFT!',
+                    text: 'We can\'t earn God\'s love. It\'s FREE! Just believe in Jesus!',
+                    color: 'bg-green-100',
+                    textColor: 'text-green-600'
+                },
+                {
+                    emoji: '🌍',
+                    title: 'Tell Everyone!',
+                    text: 'Jesus wants us to tell EVERYONE about His love!',
+                    color: 'bg-blue-100',
+                    textColor: 'text-blue-600'
+                }
+            ];
+
+            const nextStep = () => {
+                if (step < story.length - 1) {
+                    setStep(step + 1);
+                } else {
+                    completeActivity('story');
+                    setCurrentSection('home');
+                }
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto">
+                    <button
+                        onClick={() => setCurrentSection('home')}
+                        className="mb-6 px-6 py-3 bg-white rounded-full shadow-lg text-xl font-bold hover:scale-110 transition"
+                    >
+                        🏠 Back Home
+                    </button>
+
+                    <div className={`${story[step].color} rounded-3xl p-12 shadow-2xl text-center pop`}>
+                        <div className="text-9xl mb-6 bounce">{story[step].emoji}</div>
+                        <h2 className={`text-5xl font-bold ${story[step].textColor} mb-6`}>
+                            {story[step].title}
+                        </h2>
+                        <p className="text-3xl text-gray-700 leading-relaxed mb-8">
+                            {story[step].text}
+                        </p>
+                        
+                        <div className="flex justify-center gap-3 mb-6">
+                            {story.map((_, i) => (
+                                <div
+                                    key={i}
+                                    className={`w-4 h-4 rounded-full ${i === step ? 'bg-purple-600' : 'bg-gray-300'}`}
+                                />
+                            ))}
+                        </div>
+
+                        <button
+                            onClick={nextStep}
+                            className="big-button bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-bold shadow-xl"
+                        >
+                            {step < story.length - 1 ? '➡️ Next!' : '⭐ Finish!'}
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const MatchingGame = ({ setCurrentSection, completeActivity }) => {
+            const [matches, setMatches] = useState([]);
+            const [selected, setSelected] = useState(null);
+            
+            const items = [
+                { id: 1, text: 'God', match: 'Love', emoji: '❤️' },
+                { id: 2, text: 'Jesus', match: 'Saves', emoji: '✝️' },
+                { id: 3, text: 'Gift', match: 'Free', emoji: '🎁' },
+                { id: 4, text: 'Tell', match: 'Everyone', emoji: '🌍' }
+            ];
+
+            const handleClick = (item, side) => {
+                if (matches.includes(item.id)) return;
+                
+                if (!selected) {
+                    setSelected({ item, side });
+                } else {
+                    if (selected.item.id === item.id && selected.side !== side) {
+                        setMatches([...matches, item.id]);
+                        setSelected(null);
+                        
+                        if (matches.length === items.length - 1) {
+                            setTimeout(() => {
+                                completeActivity('matching');
+                                setCurrentSection('home');
+                            }, 1500);
+                        }
+                    } else {
+                        setSelected(null);
+                    }
+                }
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <button
+                        onClick={() => setCurrentSection('home')}
+                        className="mb-6 px-6 py-3 bg-white rounded-full shadow-lg text-xl font-bold hover:scale-110 transition"
+                    >
+                        🏠 Back Home
+                    </button>
+
+                    <div className="bg-white rounded-3xl p-8 shadow-2xl">
+                        <h2 className="text-4xl font-bold text-center text-purple-600 mb-4">
+                            🎮 Match Them Up!
+                        </h2>
+                        <p className="text-2xl text-center text-gray-600 mb-8">
+                            Click two that go together!
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-8">
+                            {/* Left Side */}
+                            <div className="space-y-4">
+                                {items.map(item => (
+                                    <button
+                                        key={`left-${item.id}`}
+                                        onClick={() => handleClick(item, 'left')}
+                                        disabled={matches.includes(item.id)}
+                                        className={`w-full p-6 rounded-2xl text-2xl font-bold transition ${
+                                            matches.includes(item.id)
+                                                ? 'bg-green-200 text-green-800'
+                                                : selected?.item.id === item.id && selected?.side === 'left'
+                                                ? 'bg-yellow-200 text-yellow-800 scale-105'
+                                                : 'bg-blue-100 text-blue-800 hover:scale-105'
+                                        }`}
+                                    >
+                                        {matches.includes(item.id) ? '✅' : item.emoji} {item.text}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Right Side */}
+                            <div className="space-y-4">
+                                {items.map(item => (
+                                    <button
+                                        key={`right-${item.id}`}
+                                        onClick={() => handleClick(item, 'right')}
+                                        disabled={matches.includes(item.id)}
+                                        className={`w-full p-6 rounded-2xl text-2xl font-bold transition ${
+                                            matches.includes(item.id)
+                                                ? 'bg-green-200 text-green-800'
+                                                : selected?.item.id === item.id && selected?.side === 'right'
+                                                ? 'bg-yellow-200 text-yellow-800 scale-105'
+                                                : 'bg-pink-100 text-pink-800 hover:scale-105'
+                                        }`}
+                                    >
+                                        {item.match} {matches.includes(item.id) ? '✅' : item.emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {matches.length === items.length && (
+                            <div className="mt-8 text-center pop">
+                                <div className="text-6xl mb-4">🎉</div>
+                                <p className="text-3xl font-bold text-green-600">Great Job!</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const DrawingActivity = ({ setCurrentSection, completeActivity }) => {
+            const canvasRef = useRef(null);
+            const [isDrawing, setIsDrawing] = useState(false);
+            const [color, setColor] = useState('#FF6B6B');
+
+            const colors = [
+                { name: 'Red', value: '#FF6B6B', emoji: '❤️' },
+                { name: 'Blue', value: '#4ECDC4', emoji: '💙' },
+                { name: 'Yellow', value: '#FFE66D', emoji: '💛' },
+                { name: 'Green', value: '#95E1D3', emoji: '💚' },
+                { name: 'Purple', value: '#AA96DA', emoji: '💜' },
+                { name: 'Orange', value: '#FCBAD3', emoji: '🧡' }
+            ];
+
+            useEffect(() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                
+                canvas.width = canvas.offsetWidth;
+                canvas.height = 500;
+
+                const ctx = canvas.getContext('2d');
+                
+                // Draw cross
+                ctx.strokeStyle = '#AA96DA';
+                ctx.lineWidth = 15;
+                ctx.lineCap = 'round';
+                
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY - 100);
+                ctx.lineTo(centerX, centerY + 100);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(centerX - 80, centerY - 30);
+                ctx.lineTo(centerX + 80, centerY - 30);
+                ctx.stroke();
+                
+                // Add "JESUS" text
+                ctx.font = 'bold 30px Fredoka';
+                ctx.fillStyle = '#AA96DA';
+                ctx.textAlign = 'center';
+                ctx.fillText('JESUS', centerX, centerY + 140);
+            }, []);
+
+            const getCoordinates = (e) => {
+                const canvas = canvasRef.current;
+                const rect = canvas.getBoundingClientRect();
+                
+                if (e.touches && e.touches.length > 0) {
+                    return {
+                        x: e.touches[0].clientX - rect.left,
+                        y: e.touches[0].clientY - rect.top
+                    };
+                }
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            };
+
+            const startDrawing = (e) => {
+                e.preventDefault();
+                setIsDrawing(true);
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const coords = getCoordinates(e);
+                ctx.beginPath();
+                ctx.moveTo(coords.x, coords.y);
+            };
+
+            const draw = (e) => {
+                if (!isDrawing) return;
+                e.preventDefault();
+                
+                const canvas = canvasRef.current;
+                const ctx = canvas.getContext('2d');
+                const coords = getCoordinates(e);
+                
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.lineTo(coords.x, coords.y);
+                ctx.stroke();
+            };
+
+            const stopDrawing = () => {
+                setIsDrawing(false);
+            };
+
+            const handleDone = () => {
+                completeActivity('drawing');
+                setCurrentSection('home');
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <button
+                        onClick={() => setCurrentSection('home')}
+                        className="mb-6 px-6 py-3 bg-white rounded-full shadow-lg text-xl font-bold hover:scale-110 transition"
+                    >
+                        🏠 Back Home
+                    </button>
+
+                    <div className="bg-white rounded-3xl p-8 shadow-2xl">
+                        <h2 className="text-4xl font-bold text-center text-purple-600 mb-4">
+                            🎨 Draw People Coming to Jesus!
+                        </h2>
+                        <p className="text-2xl text-center text-gray-600 mb-6">
+                            Draw arrows and names around the cross!
+                        </p>
+
+                        {/* Color Palette */}
+                        <div className="flex flex-wrap gap-3 justify-center mb-6">
+                            {colors.map(c => (
+                                <button
+                                    key={c.value}
+                                    onClick={() => setColor(c.value)}
+                                    className={`px-6 py-3 rounded-full text-2xl font-bold transition ${
+                                        color === c.value ? 'scale-125 ring-4 ring-purple-400' : 'hover:scale-110'
+                                    }`}
+                                    style={{backgroundColor: c.value, color: 'white'}}
+                                >
+                                    {c.emoji}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Canvas */}
+                        <canvas
+                            ref={canvasRef}
+                            className="drawing-canvas w-full border-4 border-purple-300 rounded-2xl bg-gradient-to-br from-blue-50 to-purple-50 mb-6"
+                            onMouseDown={startDrawing}
+                            onMouseMove={draw}
+                            onMouseUp={stopDrawing}
+                            onMouseLeave={stopDrawing}
+                            onTouchStart={startDrawing}
+                            onTouchMove={draw}
+                            onTouchEnd={stopDrawing}
+                        />
+
+                        <button
+                            onClick={handleDone}
+                            className="big-button w-full bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-full font-bold shadow-xl"
+                        >
+                            ✅ I'm Done!
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const MemoryVerse = ({ setCurrentSection, completeActivity }) => {
+            const [showVerse, setShowVerse] = useState(false);
+            
+            const handleDone = () => {
+                completeActivity('memory');
+                setCurrentSection('home');
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto">
+                    <button
+                        onClick={() => setCurrentSection('home')}
+                        className="mb-6 px-6 py-3 bg-white rounded-full shadow-lg text-xl font-bold hover:scale-110 transition"
+                    >
+                        🏠 Back Home
+                    </button>
+
+                    <div className="bg-white rounded-3xl p-12 shadow-2xl text-center">
+                        <div className="text-8xl mb-6 bounce">📖</div>
+                        <h2 className="text-4xl font-bold text-purple-600 mb-8">
+                            Memory Verse!
+                        </h2>
+
+                        <div className="bg-yellow-100 rounded-2xl p-8 mb-8">
+                            <p className="text-3xl font-bold text-gray-800 leading-relaxed">
+                                "God so LOVED the world that He gave His only Son."
+                            </p>
+                            <p className="text-2xl text-gray-600 mt-4">John 3:16</p>
+                        </div>
+
+                        <button
+                            onClick={() => setShowVerse(!showVerse)}
+                            className="big-button bg-gradient-to-r from-blue-400 to-purple-500 text-white rounded-full font-bold shadow-xl mb-6"
+                        >
+                            {showVerse ? '🙈 Hide' : '👀 Show'} Actions!
+                        </button>
+
+                        {showVerse && (
+                            <div className="bg-purple-100 rounded-2xl p-8 mb-6 pop">
+                                <h3 className="text-3xl font-bold text-purple-600 mb-6">Do the Motions!</h3>
+                                <div className="space-y-4 text-2xl text-left">
+                                    <p><span className="font-bold">❤️ "God so LOVED"</span> - Point up, then hug yourself</p>
+                                    <p><span className="font-bold">🌍 "the world"</span> - Make a big circle with your arms</p>
+                                    <p><span className="font-bold">🎁 "that He gave"</span> - Hold hands out like giving a gift</p>
+                                    <p><span className="font-bold">✝️ "His only Son"</span> - Point to the cross</p>
+                                </div>
+                            </div>
+                        )}
+
+                        <button
+                            onClick={handleDone}
+                            className="big-button w-full bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-full font-bold shadow-xl"
+                        >
+                            ⭐ I Learned It!
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        const PrayerActivity = ({ setCurrentSection, completeActivity }) => {
+            const [names, setNames] = useState([]);
+            const [inputName, setInputName] = useState('');
+            const [prayed, setPrayed] = useState(false);
+
+            const addName = () => {
+                if (inputName.trim()) {
+                    setNames([...names, inputName.trim()]);
+                    setInputName('');
+                }
+            };
+
+            const handlePray = () => {
+                setPrayed(true);
+                setTimeout(() => {
+                    completeActivity('prayer');
+                    setCurrentSection('home');
+                }, 2000);
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto">
+                    <button
+                        onClick={() => setCurrentSection('home')}
+                        className="mb-6 px-6 py-3 bg-white rounded-full shadow-lg text-xl font-bold hover:scale-110 transition"
+                    >
+                        🏠 Back Home
+                    </button>
+
+                    <div className="bg-white rounded-3xl p-12 shadow-2xl">
+                        <div className="text-8xl mb-6 text-center bounce">🙏</div>
+                        <h2 className="text-4xl font-bold text-center text-purple-600 mb-4">
+                            Prayer Time!
+                        </h2>
+                        <p className="text-2xl text-center text-gray-600 mb-8">
+                            Who do you want to pray for?
+                        </p>
+
+                        <div className="flex gap-3 mb-6">
+                            <input
+                                type="text"
+                                value={inputName}
+                                onChange={(e) => setInputName(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && addName()}
+                                placeholder="Type a name..."
+                                className="flex-1 px-6 py-4 border-4 border-purple-300 rounded-full text-2xl focus:outline-none focus:border-purple-500"
+                            />
+                            <button
+                                onClick={addName}
+                                className="px-8 py-4 bg-purple-500 text-white rounded-full text-2xl font-bold hover:scale-110 transition"
+                            >
+                                ➕
+                            </button>
+                        </div>
+
+                        {names.length > 0 && (
+                            <div className="space-y-3 mb-8">
+                                {names.map((name, i) => (
+                                    <div key={i} className="bg-yellow-100 rounded-2xl p-4 text-2xl font-bold text-center pop">
+                                        {name} 💛
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {names.length > 0 && !prayed && (
+                            <button
+                                onClick={handlePray}
+                                className="big-button w-full bg-gradient-to-r from-pink-400 to-purple-500 text-white rounded-full font-bold shadow-xl"
+                            >
+                                🙏 Pray Now!
+                            </button>
+                        )}
+
+                        {prayed && (
+                            <div className="text-center pop">
+                                <div className="text-6xl mb-4">🎉</div>
+                                <p className="text-3xl font-bold text-green-600">God Hears You!</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<KidsApp />, document.getElementById('root'));
+    </script>
+</body>
+</html>
